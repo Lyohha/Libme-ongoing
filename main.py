@@ -1,5 +1,6 @@
 import DataBase
 import Consts
+import List
 import TGUser
 import AddLink
 import os
@@ -19,19 +20,26 @@ def main():
         entry_points=[
             CommandHandler('start', TGUser.start),
             CommandHandler('buttons', TGUser.buttons),
+            MessageHandler(Filters.regex(Consts.BUTTONS.ADD), AddLink.on_new),
+            MessageHandler(Filters.regex(Consts.BUTTONS.CANCEL), AddLink.on_cancel),
+            MessageHandler(Filters.regex(Consts.BUTTONS.LIST), List.all),
+            CallbackQueryHandler(List.delete, pass_user_data=True, pattern="delete/"),
+            CallbackQueryHandler(List.pagination, pass_user_data=True, pattern="page/"),
         ],
         states={
             Consts.STATES.NEW_USER: [
                 MessageHandler(Filters.regex(r"^(?:[1-9]\d*(?:\.\d+)?|0\.0*[1-9]\d*)$"), TGUser.show_per_page)
             ],
-            Consts.STATES.BUTTONS: [
-
-            ],
             Consts.STATES.LIST: [
                 CommandHandler('buttons', TGUser.buttons),
+                MessageHandler(Filters.regex(Consts.BUTTONS.ADD), AddLink.on_new),
+                MessageHandler(Filters.regex(Consts.BUTTONS.LIST), List.all),
+                CallbackQueryHandler(List.delete, pass_user_data=True, pattern="delete/"),
+                CallbackQueryHandler(List.pagination, pass_user_data=True, pattern="page/"),
             ],
             Consts.STATES.ADD_LINK: [
-
+                MessageHandler(Filters.regex(Consts.BUTTONS.CANCEL), AddLink.on_cancel),
+                MessageHandler(Filters.text, AddLink.on_link),
             ],
             Consts.STATES.DOWNLOADER: [
 
