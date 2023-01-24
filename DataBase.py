@@ -79,3 +79,44 @@ class DataBase:
             cur = connection.cursor()
             cur.execute(self.__create_table_downloads)
             cur.close()
+
+    def get_tg_user_by_chat_id(self, chat_id):
+        connection = self.__connection()
+
+        with connection:
+            cur = connection.cursor()
+            cur.execute(self.__get_tg_user_by_chat_id, (str(chat_id),))
+            users = cur.fetchall()
+            cur.close()
+
+        if len(users) > 0:
+            return users[0]
+        return None
+
+    def insert_tg_user(self, chat_id, show_per_page):
+        user = self.get_tg_user_by_chat_id(chat_id)
+
+        if user is not None:
+            self.update_tg_user(chat_id, show_per_page)
+            return
+
+        connection = self.__connection()
+
+        with connection:
+            cur = connection.cursor()
+            cur.execute(self.__insert_tg_user, (str(chat_id), str(show_per_page),))
+            cur.close()
+
+    def update_tg_user(self, chat_id, show_per_page):
+        user = self.get_tg_user_by_chat_id(chat_id)
+
+        if user is None:
+            self.insert_tg_user(chat_id, show_per_page)
+            return
+
+        connection = self.__connection()
+
+        with connection:
+            cur = connection.cursor()
+            cur.execute(self.__update_tg_user, (str(show_per_page), str(chat_id), ))
+            cur.close()
