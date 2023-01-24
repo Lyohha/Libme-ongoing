@@ -14,14 +14,14 @@ def start(update, context):
         text="Начнем с пагинации\n\n"
              "Введите число, которое будет является количеством ссылок на одной странице",
     )
-    return Consts.NEW_USER
+    return Consts.STATES.NEW_USER
 
 
 def show_per_page(update, context):
     DataBase.init().insert_tg_user(update.effective_chat.id, update.message.text)
 
     __reply_keyboard = [
-        ['Просмотреть список', 'Добавить ссылку'],
+        [Consts.BUTTONS.LIST, Consts.BUTTONS.ADD],
     ]
 
     context.bot.send_message(
@@ -31,12 +31,12 @@ def show_per_page(update, context):
         reply_markup=ReplyKeyboardMarkup(__reply_keyboard, resize_keyboard=True, one_time_keyboard=False)
     )
 
-    return Consts.LIST
+    return Consts.STATES.LIST
 
 
 def buttons(update, context):
     __reply_keyboard = [
-        ['Просмотреть список', 'Добавить ссылку'],
+        [Consts.BUTTONS.LIST, Consts.BUTTONS.ADD],
     ]
 
     context.bot.send_message(
@@ -45,4 +45,4 @@ def buttons(update, context):
         reply_markup=ReplyKeyboardMarkup(__reply_keyboard, resize_keyboard=True, one_time_keyboard=False)
     )
 
-    return Consts.LIST
+    return Consts.STATES.LIST

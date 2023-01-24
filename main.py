@@ -1,6 +1,7 @@
 import DataBase
 import Consts
 import TGUser
+import AddLink
 import os
 from dotenv import load_dotenv
 from telegram.ext import Updater, ConversationHandler, CommandHandler, MessageHandler, Filters, CallbackQueryHandler
@@ -20,19 +21,19 @@ def main():
             CommandHandler('buttons', TGUser.buttons),
         ],
         states={
-            Consts.NEW_USER: [
+            Consts.STATES.NEW_USER: [
                 MessageHandler(Filters.regex(r"^(?:[1-9]\d*(?:\.\d+)?|0\.0*[1-9]\d*)$"), TGUser.show_per_page)
             ],
-            Consts.BUTTONS: [
+            Consts.STATES.BUTTONS: [
 
             ],
-            Consts.LIST: [
+            Consts.STATES.LIST: [
                 CommandHandler('buttons', TGUser.buttons),
             ],
-            Consts.ADD_LINK: [
+            Consts.STATES.ADD_LINK: [
 
             ],
-            Consts.DOWNLOADER: [
+            Consts.STATES.DOWNLOADER: [
 
             ]
         },
