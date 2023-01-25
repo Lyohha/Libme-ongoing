@@ -3,6 +3,8 @@ import Consts
 import List
 import TGUser
 import AddLink
+import Feed
+import BotUpdates
 import os
 from dotenv import load_dotenv
 from telegram.ext import Updater, ConversationHandler, CommandHandler, MessageHandler, Filters, CallbackQueryHandler
@@ -12,6 +14,8 @@ load_dotenv()
 
 def main():
     DataBase.init().init_database()
+    BotUpdates.init()
+    Feed.init().start()
 
     updater = Updater(os.getenv('TOKEN', default=None), use_context=True)
     dispatcher = updater.dispatcher

@@ -41,7 +41,7 @@ class DataBase:
 
         self.__get_all_links = "SELECT * FROM links;"
         self.__get_link = "SELECT * FROM links WHERE link = %s;"
-        self.__insert_link = "INSERT INTO links (link, title, type) VALUES (%s, %s, %s);"
+        self.__insert_link = "INSERT INTO links (link, title, type, last) VALUES (%s, %s, %s, %s);"
         self.__update_last_in_link = "UPDATE links SET last = %s WHERE id = %s;"
 
         self.__insert_link_in_feed = "INSERT INTO feed (chat_id, link) VALUES (%s, %s);"
@@ -51,6 +51,7 @@ class DataBase:
                                         "WHERE chat_id = %s ORDER BY id DESC LIMIT %s OFFSET %s;"
         self.__get_chat_id_feed_count = "SELECT count(id) FROM feed WHERE chat_id = %s;"
         self.__remove_link_from_feed = "DELETE FROM feed WHERE chat_id = %s and id = %s"
+        self.__get_users_by_link = "SELECT chat_id FROM feed WHERE link = %s;"
 
         self.__get_bot_settings = "SELECT * from bot_settings"
         self.__add_bot_settings = "INSERT INTO bot_settings (key, value) " \
@@ -166,7 +167,7 @@ class DataBase:
             return links[0]
         return None
 
-    def get_all_links(self, link):
+    def get_all_links(self):
         connection = self.__connection()
 
         with connection:
@@ -176,12 +177,20 @@ class DataBase:
             cur.close()
         return links
 
-    def insert_link(self, link, title, ltype):
+    def insert_link(self, link, title, ltype, last):
         connection = self.__connection()
 
         with connection:
             cur = connection.cursor()
-            cur.execute(self.__insert_link, (str(link), str(title), str(ltype),))
+            cur.execute(self.__insert_link, (str(link), str(title), str(ltype), str(last),))
+            cur.close()
+
+    def update_last_in_link(self, id, last):
+        connection = self.__connection()
+
+        with connection:
+            cur = connection.cursor()
+            cur.execute(self.__update_last_in_link, (str(last), str(id),))
             cur.close()
 
     def get_record_from_feed_by_chat_id_link(self, chat_id, link):
@@ -247,6 +256,16 @@ class DataBase:
             cur = connection.cursor()
             cur.execute(self.__remove_link_from_feed, (str(chat_id), str(id), ))
             cur.close()
+
+    def get_users_by_link(self, link):
+        connection = self.__connection()
+
+        with connection:
+            cur = connection.cursor()
+            cur.execute(self.__get_users_by_link, (str(link), ))
+            users = cur.fetchall()
+            cur.close()
+        return users
 
     def load_bot_settings(self):
         __my_db_connector = self.__connection()

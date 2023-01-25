@@ -1,5 +1,11 @@
 import DataBase
 import Parser
+from threading import Thread
+from time import sleep
+from telegram import InlineKeyboardButton, InlineKeyboardMarkup
+from telegram.ext import Updater
+import telegram
+import os
 
 
 def init():
@@ -10,10 +16,10 @@ def insert_link_to_tg_user(chat_id, link):
     db = DataBase.init()
     db_link = db.get_link(link)
 
-    parser = Parser.new(link).get_info()
+    parser = Parser.new(link)
 
     if db_link is None:
-        db.insert_link(link, parser['title'], parser['type'])
+        db.insert_link(link, parser.get_info()['title'], parser.get_info()['type'], parser.get_last()['chapter_id'])
         db_link = db.get_link(link)
         Feed.links.append(link)
 
@@ -35,12 +41,56 @@ class Feed:
             Feed.links.append(link[1])
 
     def start(self):
-        pass
+        print('asd1')
+        thread = Thread(target=self.feed_thread, args=())
+        thread.start()
 
     def feed_thread(self):
-        link = Feed.links[Feed.index]
+        updater = Updater(os.getenv('TOKEN', default=None), use_context=True)
+        dispatcher = updater.dispatcher
+        context = telegram.ext.callbackcontext.CallbackContext(dispatcher)
 
-        Feed.index = Feed.index + 1
+        while True:
+            link = Feed.links[Feed.index]
 
-        if Feed.index == len(Feed.links):
-            Feed.index = 0
+            db = DataBase.init()
+
+            db_link = db.get_link(link)
+
+            if db_link is not None:
+                parser = Parser.new(link)
+                items = parser.get_all()
+
+                users = []
+
+                for item in items:
+                    if str(item['chapter_id']) == db_link[2]:
+                        break
+
+                    if len(users) == 0:
+                        users = db.get_users_by_link(link)
+
+                    url = db_link[1] + '/v' + str(item['chapter_volume']) + '/c' + str(item['chapter_number'])
+
+                    buttons = [[
+                        InlineKeyboardButton('Перейти', url=url),
+                    ]]
+
+                    for user in users:
+                        try:
+                            context.bot.send_message(
+                                user[0],
+                                text=F"{parser.get_info()['title']}\nТом {item['chapter_volume']} Глава {item['chapter_number']}",
+                                reply_markup=InlineKeyboardMarkup(buttons)
+                            )
+                        except Exception as exe:
+                            continue
+
+                db.update_last_in_link(db_link[0], parser.get_last()['chapter_id'])
+
+            Feed.index = Feed.index + 1
+
+            if Feed.index == len(Feed.links):
+                Feed.index = 0
+
+            sleep(120)
