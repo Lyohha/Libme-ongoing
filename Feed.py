@@ -14,16 +14,7 @@ def init():
 
 def insert_link_to_tg_user(chat_id, link):
     db = DataBase.init()
-    db_link = db.get_link(link)
-
-    parser = Parser.new(link)
-
-    if db_link is None:
-        db.insert_link(link, parser.get_info()['title'], parser.get_info()['type'], parser.get_last()['chapter_id'])
-        db_link = db.get_link(link)
-        Feed.links.append(link)
-
-    db.insert_link_in_feed(chat_id, link)
+    db.insert_in_queue(chat_id, link)
 
 
 class Feed:
@@ -41,9 +32,27 @@ class Feed:
             Feed.links.append(link[1])
 
     def start(self):
-        print('asd1')
         thread = Thread(target=self.feed_thread, args=())
         thread.start()
+
+    def __clear_queue(self):
+        db = DataBase.init()
+        items = db.get_queue()
+
+        for item in items:
+            db_link = db.get_link(item[2])
+
+            if db_link is None:
+                parser = Parser.new(item[2])
+
+                db.insert_link(item[2],
+                               parser.get_info()['title'],
+                               parser.get_info()['type'],
+                               parser.get_last()['chapter_id'])
+                Feed.links.append(item[2])
+
+            db.insert_link_in_feed(item[1], item[2])
+            db.remove_queue_item(item[0])
 
     def feed_thread(self):
         updater = Updater(os.getenv('TOKEN', default=None), use_context=True)
@@ -51,6 +60,8 @@ class Feed:
         context = telegram.ext.callbackcontext.CallbackContext(dispatcher)
 
         while True:
+            self.__clear_queue()
+
             link = Feed.links[Feed.index]
 
             db = DataBase.init()
@@ -58,7 +69,13 @@ class Feed:
             db_link = db.get_link(link)
 
             if db_link is not None:
-                parser = Parser.new(link)
+
+                try:
+                    parser = Parser.new(link)
+                except:
+                    sleep(10)
+                    continue
+
                 items = parser.get_all()
 
                 users = []

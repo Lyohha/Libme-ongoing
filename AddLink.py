@@ -28,7 +28,7 @@ def on_link(update, context):
 
     context.bot.send_message(
         update.effective_chat.id,
-        text=f"Ссылка добавлена",
+        text=f"Ссылка добавлена. Она появиться в вашем списке через минуту.",
         reply_markup=ReplyKeyboardMarkup(__control_keyboard, resize_keyboard=True, one_time_keyboard=False)
     )
 

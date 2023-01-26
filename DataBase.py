@@ -31,6 +31,10 @@ class DataBase:
                                         "file_id BIGINT NOT NULL, " \
                                         "item_id VARCHAR(100) NOT NULL, " \
                                         "link BIGINT NOT NULL);"
+        self.__create_table_queue = "CREATE TABLE IF NOT EXISTS queue(" \
+                                    "id SERIAL, " \
+                                    "chat_id VARCHAR(100) NOT NULL, " \
+                                    "link TEXT NOT NULL);"
 
         self.__get_tg_user_by_chat_id = "SELECT * FROM tg_users WHERE chat_id = %s;"
         self.__insert_tg_user = "INSERT INTO tg_users (chat_id, show_per_page) " \
@@ -58,6 +62,10 @@ class DataBase:
                                   "VALUES (%s, %s)"
         self.__update_bot_settings = "UPDATE bot_settings SET value = %s " \
                                      "WHERE key = %s"
+
+        self.__get_queue = "SELECT * FROM queue;"
+        self.__insert_in_queue = "INSERT INTO queue (chat_id, link) VALUES (%s, %s);"
+        self.__remove_queue_item = "DELETE FROM queue where id = %s;"
 
     def __connection(self):
         return psycopg2.connect(
@@ -93,6 +101,11 @@ class DataBase:
         with connection:
             cur = connection.cursor()
             cur.execute(self.__create_table_downloads)
+            cur.close()
+
+        with connection:
+            cur = connection.cursor()
+            cur.execute(self.__create_table_queue)
             cur.close()
 
     def get_tg_user_by_chat_id(self, chat_id):
@@ -292,3 +305,29 @@ class DataBase:
             __con.execute(self.__add_bot_settings, (key, value, ))
             __my_db_connector.commit()
             __con.close()
+
+    def remove_queue_item(self, id):
+        connection = self.__connection()
+
+        with connection:
+            cur = connection.cursor()
+            cur.execute(self.__remove_queue_item, (str(id),))
+            cur.close()
+
+    def get_queue(self):
+        connection = self.__connection()
+
+        with connection:
+            cur = connection.cursor()
+            cur.execute(self.__get_queue, ())
+            queue = cur.fetchall()
+            cur.close()
+        return queue
+
+    def insert_in_queue(self, chat_id, link):
+
+        connection = self.__connection()
+        with connection:
+            cur = connection.cursor()
+            cur.execute(self.__insert_in_queue, (chat_id, link,))
+            cur.close()
