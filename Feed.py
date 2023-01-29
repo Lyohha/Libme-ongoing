@@ -104,10 +104,17 @@ class Feed:
                         ]]
 
                         for user in users:
+                            new_text = ''
+
+                            if parser.get_info()['type'] == 'mange':
+                                new_text = 'Новая глава манги'
+                            elif parser.get_info()['type'] == 'ranobe':
+                                new_text = 'Новая глава ранобе'
+
                             try:
                                 context.bot.send_message(
                                     user[0],
-                                    text=F"{parser.get_info()['title']}\nТом {item['chapter_volume']} Глава {item['chapter_number']}",
+                                    text=F"{new_text}\n{parser.get_info()['title']}\nТом {item['chapter_volume']} Глава {item['chapter_number']}",
                                     reply_markup=InlineKeyboardMarkup(buttons)
                                 )
                             except Exception as exe:
