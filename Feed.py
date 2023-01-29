@@ -25,34 +25,43 @@ class Feed:
         self.load_links()
 
     def load_links(self):
-        db = DataBase.init()
-        links = db.get_all_links()
+        while True:
+            try:
+                db = DataBase.init()
+            except:
+                sleep(120)
+                continue
+            links = db.get_all_links()
 
-        for link in links:
-            Feed.links.append(link[1])
+            for link in links:
+                Feed.links.append(link[1])
+            return
 
     def start(self):
         thread = Thread(target=self.feed_thread, args=())
         thread.start()
 
     def __clear_queue(self):
-        db = DataBase.init()
-        items = db.get_queue()
+        try:
+            db = DataBase.init()
+            items = db.get_queue()
 
-        for item in items:
-            db_link = db.get_link(item[2])
+            for item in items:
+                db_link = db.get_link(item[2])
 
-            if db_link is None:
-                parser = Parser.new(item[2])
+                if db_link is None:
+                    parser = Parser.new(item[2])
 
-                db.insert_link(item[2],
-                               parser.get_info()['title'],
-                               parser.get_info()['type'],
-                               parser.get_last()['chapter_id'])
-                Feed.links.append(item[2])
+                    db.insert_link(item[2],
+                                   parser.get_info()['title'],
+                                   parser.get_info()['type'],
+                                   parser.get_last()['chapter_id'])
+                    Feed.links.append(item[2])
 
-            db.insert_link_in_feed(item[1], item[2])
-            db.remove_queue_item(item[0])
+                db.insert_link_in_feed(item[1], item[2])
+                db.remove_queue_item(item[0])
+        except:
+            return
 
     def feed_thread(self):
         updater = Updater(os.getenv('TOKEN', default=None), use_context=True)
@@ -64,50 +73,54 @@ class Feed:
 
             link = Feed.links[Feed.index]
 
-            db = DataBase.init()
+            try:
+                db = DataBase.init()
 
-            db_link = db.get_link(link)
+                db_link = db.get_link(link)
 
-            if db_link is not None:
+                if db_link is not None:
 
-                try:
-                    parser = Parser.new(link)
-                except:
-                    sleep(10)
-                    continue
+                    try:
+                        parser = Parser.new(link)
+                    except:
+                        sleep(10)
+                        continue
 
-                items = parser.get_all()
+                    items = parser.get_all()
 
-                users = []
+                    users = []
 
-                for item in items:
-                    if str(item['chapter_id']) == db_link[2]:
-                        break
+                    for item in items:
+                        if str(item['chapter_id']) == db_link[2]:
+                            break
 
-                    if len(users) == 0:
-                        users = db.get_users_by_link(link)
+                        if len(users) == 0:
+                            users = db.get_users_by_link(link)
 
-                    url = db_link[1] + '/v' + str(item['chapter_volume']) + '/c' + str(item['chapter_number'])
+                        url = db_link[1] + '/v' + str(item['chapter_volume']) + '/c' + str(item['chapter_number'])
 
-                    buttons = [[
-                        InlineKeyboardButton('Перейти', url=url),
-                    ]]
+                        buttons = [[
+                            InlineKeyboardButton('Перейти', url=url),
+                        ]]
 
-                    for user in users:
-                        try:
-                            context.bot.send_message(
-                                user[0],
-                                text=F"{parser.get_info()['title']}\nТом {item['chapter_volume']} Глава {item['chapter_number']}",
-                                reply_markup=InlineKeyboardMarkup(buttons)
-                            )
-                        except Exception as exe:
-                            continue
+                        for user in users:
+                            try:
+                                context.bot.send_message(
+                                    user[0],
+                                    text=F"{parser.get_info()['title']}\nТом {item['chapter_volume']} Глава {item['chapter_number']}",
+                                    reply_markup=InlineKeyboardMarkup(buttons)
+                                )
+                            except Exception as exe:
+                                continue
 
-                db.update_last_in_link(db_link[0], parser.get_last()['chapter_id'])
+                    db.update_last_in_link(db_link[0], parser.get_last()['chapter_id'])
 
-            Feed.index = Feed.index + 1
+                Feed.index = Feed.index + 1
 
-            if Feed.index == len(Feed.links):
-                Feed.index = 0
+                if Feed.index == len(Feed.links):
+                    Feed.index = 0
 
-            sleep(120)
+                sleep(120)
+            except:
+                sleep(120)
+                continue
